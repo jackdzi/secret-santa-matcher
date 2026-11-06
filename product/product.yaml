@@ -1,0 +1,11 @@
+_ > nanoagent.plugin.v0001.ProductConfig:
+tagline: "Draw Secret Santa names that respect every exclusion, or prove it cannot be done"
+summary: "Give a group size, a seed and a rule, and the agent draws names for a gift exchange: everyone gives one gift and gets one, nobody draws themselves, their partner, their housemates or last year's pick, and with the one-loop rule the gifts pass around the whole group in a single chain. Some groups have no fair draw at all, and the agent has to say so. A deterministic checker accepts any valid draw and proves an impossible one by counting every possible draw."
+highlights:
+  - "Any valid draw passes; the checker names each rule a wrong one breaks"
+  - "About a fifth of groups, at every size, are impossible, and saying so is checked exhaustively"
+  - "Couples, households, last year's pairs and requests, with an optional single-loop rule"
+steps:
+  - "Ask for a group size from 2 to 10, a seed, and the rule any or single-cycle"
+  - "The agent reads the group, proposes a draw and checks it against the rules"
+  - "See the draw, or the impossible verdict, with the checker's count of valid draws"

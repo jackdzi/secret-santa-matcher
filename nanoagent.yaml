@@ -1,0 +1,39 @@
+_ > nanoagent.plugin.v0001.ManifestConfig:
+id: secret-santa-matcher
+name: Secret Santa Matcher
+version: 0.1.0
+status: ready
+spec: nanoagent.plugin/v0001
+
+runtime > nanoagent.plugin.v0001.RuntimeConfig:
+  type: mcp_stdio
+  command: [uv, run, --frozen, python, -m, plugin]
+
+permissions > nanoagent.plugin.v0001.PermissionsConfig:
+  network > nanoagent.plugin.v0001.NetworkConfig:
+    hosts: []
+  filesystem > nanoagent.plugin.v0001.FilesystemConfig:
+    write: [workspace]
+
+# One entry per contract.Tool; its input and output classes are contract.TOOLS's.
+tools > dict[contract.Tool, nanoagent.plugin.v0001.ToolConfig]:
+  get_group:
+    description: Get the task's gift-exchange group, its people, every excluded giver-to-receiver pair with its reason, and each person's allowed receivers
+  check_assignment:
+    description: Check a proposed assignment against the task's rules and list every rule it breaks; it never suggests an assignment
+  pin_feasibility:
+    description: Pin whether a valid assignment exists, one example and how many there are, the task's answer key
+
+# One entry per contract.Task; its input class is contract.TASKS's.
+tasks > dict[contract.Task, nanoagent.plugin.v0001.TaskConfig]:
+  match-gifts:
+    description: Assign every person in a gift exchange someone to give to, respecting the exclusions and the rule, or show that no assignment exists
+    runner: agent
+    tools: [get_group, check_assignment]
+    reference: pin_feasibility
+    instructions: |-
+      Rules. Every person gives exactly one gift and receives exactly one. Nobody gives to themselves, and no giver gives to a receiver their exclusions forbid (allowed lists, for each giver, everyone they may give to). With rule single-cycle, following giver to receiver from any person must visit everyone exactly once before returning to them: one loop through the whole group, never two or more smaller loops (with 2 people, A gives to B and B to A is one loop). With rule any, smaller loops are fine.
+      Plan. At most four tool calls: (1) get_group with the task input copied exactly; (2) check_assignment with your proposed pairs; if it lists problems, fix them and check once more; (3) submit. check_assignment allows only 2 checks per task and refuses a third, so work the assignment out before you check it.
+      Method. Start with the givers who have the fewest allowed receivers. For single-cycle, build one chain: start at the first person, each time pick an allowed receiver not yet in the chain, and make sure the last person may give back to the first. Reason briefly.
+      Impossible. Some groups have no valid assignment. It is impossible when someone has no allowed receiver, when some group of k givers can only give to fewer than k different people in total, when some person is in no one's allowed list, or, for single-cycle, when no loop through everyone exists. Then submit status impossible with pairs []. Only say impossible when you are sure: an assignment that check_assignment calls valid is always the right answer.
+      Submit. status assigned with pairs, one pair per person, as you worked them out (the ones check_assignment accepted, if it did); or status impossible with pairs [].
